@@ -15,6 +15,8 @@ from Eval import Eval
 
 from imdb import IMDBdata
 
+import pdb
+
 class NaiveBayes:
     def __init__(self, X, Y, ALPHA=1.0):
         self.ALPHA=ALPHA
@@ -23,11 +25,47 @@ class NaiveBayes:
 
     def Train(self, X, Y):
         #TODO: Estimate Naive Bayes model parameters
+        self.prob_pos = np.log(np.sum(Y==1.0) / float(len(Y)))
+        self.prob_neg = np.log(np.sum(Y==-1.0) / float(len(Y)))
+        
+        filt = X #(X > 0) * 1.
+
+        self.feat_pos = filt[Y==1.0]
+        self.feat_neg = filt[Y==-1.0]
+        
+        self.feat_pos = ((np.sum(self.feat_pos, axis = 0)  + self.ALPHA) / (float(np.sum(self.feat_pos)) + self.ALPHA * X.shape[1]))
+        self.feat_pos = np.log(self.feat_pos)
+
+        self.feat_neg = ((np.sum(self.feat_neg, axis = 0) + self.ALPHA)  / (float(np.sum(self.feat_neg)) + self.ALPHA * X.shape[1]))
+        self.feat_neg = np.log(self.feat_neg)
+
+	
+        #self.feat_pos = np.log(filt[Y == 1.0].sum(axis = 0) / float(len(Y[Y==1.0])))
+        #self.feat_neg = np.log(filt[Y == -1.0].sum(axis = 0) / float(len(Y[Y==-1.0])))
+
+        #self.feat_pos[np.isinf(self.feat_pos)] = 0.0
+        #self.feat_neg[np.isinf(self.feat_neg)] = 0.0
+       
+        self.feat_pos = np.array(self.feat_pos).flatten()
+        self.feat_neg = np.array(self.feat_neg).flatten()
+ 
         return
 
     def Predict(self, X):
         #TODO: Implement Naive Bayes Classification
-        return 1
+
+        predictions = []
+        i = 0
+        for x in X:
+            #print i
+            i+=1
+            pos = self.prob_pos + np.sum(np.multiply((x>0).todense(), self.feat_pos))
+            neg = self.prob_neg + np.sum(np.multiply((x>0).todense(), self.feat_neg))
+            if pos > neg:
+                predictions.append(1.0)
+            else:
+                predictions.append(-1.0)
+        return np.array(predictions)
 
     def Eval(self, X_test, Y_test):
         Y_pred = self.Predict(X_test)
