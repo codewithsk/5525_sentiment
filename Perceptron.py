@@ -19,23 +19,23 @@ from imdb import IMDBdata
 class Perceptron:
     def __init__(self, X, Y, N_ITERATIONS):
         self.N_ITERATIONS = N_ITERATIONS
-        #self.W = np.random.randn(X.shape[1],1)
         self.W = np.zeros((X.shape[1],1))
-        self.mean = X.mean(axis=0)
-        for _ in range(N_ITERATIONS):
-            print("Epoch {}".format(_))
-            self.Train(X,Y)
+        self.Wa = np.zeros((X.shape[1],1))
+        self.c = 1
+        self.Train(X,Y)
 
     def ComputeAverageParameters(self):
-        #TODO: Compute average parameters (do this part last)
+        self.W = self.W - (self.Wa / self.c)
         return
 
     def Train(self, X, Y):
-        #TODO: Estimate perceptron parameters
-        for i,sample in enumerate(X):
-            pred = Y[i] * (sample * self.W)[0][0]
-            if pred <= 0:
-                self.W = self.W + Y[i]*sample.T
+        for j in range(1,self.N_ITERATIONS+1):
+            for i,sample in enumerate(X):
+                pred = Y[i] * (sample * self.W)[0][0]
+                if pred <= 0:
+                    self.W = self.W + Y[i]*sample.T
+                    self.Wa = self.Wa + self.c*Y[i]*sample.T
+                self.c+=1
         return
 
     def Predict(self, X):
@@ -54,7 +54,17 @@ if __name__ == "__main__":
     test  = IMDBdata("%s/test" % sys.argv[1], vocab=train.vocab)
     
     ptron = Perceptron(train.X, train.Y, int(sys.argv[2]))
-    ptron.ComputeAverageParameters()
+    #ptron.ComputeAverageParameters()
     print ptron.Eval(test.X, test.Y)
 
     #TODO: Print out the 20 most positive and 20 most negative words
+    sentiments = np.asarray(np.argsort(ptron.W.flatten()))[0]
+
+    ptron.W = np.array(ptron.W).flatten()
+
+    for i in sentiments[-20:]:
+        print "{}_pos:{}".format(train.vocab.id2word[i],ptron.W[i])
+
+    for i in sentiments[:20]:
+        print "{}_neg:{}".format(train.vocab.id2word[i],ptron.W[i])
+
